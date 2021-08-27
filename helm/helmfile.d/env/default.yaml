@@ -1,0 +1,17 @@
+variables:
+  apitch:
+    host: "api-check.example.com"
+    imageTag: "cr.yandex/crpurmch681deghm39te/api:v308"
+    apiAmuzeUrl: "http://gpm-api.dev.amuze.tech/api/v4/graphql"
+  prometheus:
+    alertmanager:
+      hosts: 
+        - alertmanager-check.example.com
+    grafana:
+      hosts: 
+        - grafana-check.example.com
+    prometheus:
+      hosts: 
+        - prometheus-check.example.com
+  jupyter:
+    installed: false

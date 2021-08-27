@@ -1,0 +1,63 @@
+---
+environments:
+  default:
+    values:
+      - ../env/default.yaml
+  dev:
+    values:
+      - ../env/dev.yaml
+  stage:
+    values:
+      - ../env/stage.yaml
+---
+releases:
+- name: cert-manager
+  namespace: cert-manager
+  chart: jetstack/cert-manager
+  version: v1.5.0
+  values:
+    - ../../cert-manager/values.yaml
+  disableValidation: true
+
+- name: prometheus
+  namespace: monitoring
+  chart: prometheus-community/kube-prometheus-stack
+  version: v18.0.0
+  values:
+    - ../../prometheus/values.yaml.gotmpl
+  disableValidation: true
+
+- name: scylla
+  namespace: scylla
+  chart: scylla/scylla
+  version: v1.4.0
+  values:
+    - ../../scylla/values.cluster.yaml
+- name: scylla-operator
+  namespace: scylla-operator
+  chart: scylla/scylla-operator
+  version: v1.4.0
+  values:
+    - ../../scylla/values.cluster.yaml
+- name: scylla-manager
+  namespace: scylla-manager
+  chart: scylla/scylla-manager
+  version: v1.4.0
+  values:
+    - ../../scylla/values.manager.yaml
+- name: ingress-nginx
+  namespace: ingress-nginx
+  chart: ingress-nginx/ingress-nginx
+  version: 3.35.0
+  values:
+   - ../../ingress/configmap.yaml
+   - ../../ingress/custom-headers.yaml
+   - ../../ingress/values.yaml
+#   - loadBalancerIP: "84.201.165.43"
+- name: jupyter
+  namespace: jupyter
+  chart: jupyterhub/jupyterhub
+  version: 1.0.1
+  values:
+    - ../../jupyterhub/values.yaml
+  installed: {{ .Environment.Values.variables.jupyter.installed }}

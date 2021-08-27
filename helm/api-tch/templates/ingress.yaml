@@ -1,0 +1,24 @@
+---
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: {{ $.Release.Name }}-ingress
+  namespace: {{ $.Release.Namespace }}
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt"
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      proxy_set_header X-DEVICE-ID $http_X_DEVICE_ID;
+spec:
+  rules:
+  - host: {{ .Values.host }}
+    http:
+      paths:
+        - path: /
+          backend:
+            serviceName: {{ $.Release.Name }}-svc
+            servicePort: 80
+  tls:
+  - hosts:
+    - {{ .Values.host }}
+    secretName: {{ $.Release.Name }}-tls

@@ -1,0 +1,91 @@
+# This is an example Starter pipeline configuration
+# Use a skeleton to build, test and deploy using manual and parallel steps
+# -----
+# You can specify a custom docker image from Docker Hub as your build environment.
+image: chatwork/helmfile:latest
+
+pipelines:
+  custom:
+    deployment-to-dev:
+      - step:
+          script:
+            - kubectl config set-cluster k8s --server="$DEV_K8S_CLUSTER" --insecure-skip-tls-verify=true
+            - kubectl config set-credentials bitbucket-admin --token="$KUBE_TOKEN"
+            - kubectl config set-context default --cluster=k8s --user=bitbucket-admin
+            - kubectl config use-context default
+            - curl -s -L -u "${BITBUCKET_USERNAME}:${BITBUCKET_APP_PASSWORD}" https://api.bitbucket.org/2.0/repositories/tchaikovsky1/helm/downloads/tag.txt --output tag.txt
+            - source tag.txt
+            - echo ${IMAGE_VERSION}
+            - helmfile deps
+            - helmfile --environment dev --selector name=api-tch diff --set imageTag=${IMAGE_VERSION}
+            - helmfile --environment dev --selector name=api-tch apply --set imageTag=${IMAGE_VERSION}
+  default:
+    - parallel:
+      - step:
+          name: 'Build and Test'
+          script:
+            - echo "Your build and test goes here..."
+            - echo ${IMAGE_VERSION}
+            - env
+            - ls -la
+      - step:
+          name: 'Helmfile lint'
+          script:
+            - helmfile --version
+            - helmfile build
+            - helmfile deps
+            - helmfile --log-level debug lint
+
+      - step:
+          name: 'dev Diff'
+          script:
+            - curl -s -L -u "${BITBUCKET_USERNAME}:${BITBUCKET_APP_PASSWORD}" https://api.bitbucket.org/2.0/repositories/tchaikovsky1/helm/downloads/tag.txt --output tag.txt
+            - source tag.txt
+            - echo ${IMAGE_VERSION}
+            - helmfile deps
+            - echo "Your deployment to production script goes here..."
+            - kubectl config set-cluster k8s --server="$DEV_K8S_CLUSTER" --insecure-skip-tls-verify=true
+            - kubectl config set-credentials bitbucket-admin --token="$KUBE_TOKEN"
+            - kubectl config set-context default --cluster=k8s --user=bitbucket-admin
+            - kubectl config use-context default
+            - BUILD_NUMBER=$(tail -c 5 tag.txt)
+            - echo $BUILD_NUMBER
+            - sed -i s/"v308"/"$BUILD_NUMBER"/g helmfile.d/env/dev.yaml
+            - echo "$(<helmfile.d/env/dev.yaml)"
+            - helmfile --environment dev --state-values-set imageTag=${IMAGE_VERSION} diff
+      - step:
+          name: 'stage Diff'
+          script:
+            - curl -s -L -u "${BITBUCKET_USERNAME}:${BITBUCKET_APP_PASSWORD}" https://api.bitbucket.org/2.0/repositories/tchaikovsky1/helm/downloads/tag.txt --output tag.txt
+            - source tag.txt
+            - echo ${IMAGE_VERSION}
+            - helmfile deps
+            - echo "Your deployment to production script goes here..."
+            - kubectl config set-cluster k8s --server="$STAGE_K8S_CLUSTER" --insecure-skip-tls-verify=true
+            - kubectl config set-credentials bitbucket-admin --token="$STAGE_KUBE_TOKEN"
+            - kubectl config set-context default --cluster=k8s --user=bitbucket-admin
+            - kubectl config use-context default
+            - BUILD_NUMBER=$(tail -c 5 tag.txt)
+            - echo $BUILD_NUMBER
+            - sed -i s/"v308"/"$BUILD_NUMBER"/g helmfile.d/env/stage.yaml
+            - echo "$(<helmfile.d/env/stage.yaml)"
+            - helmfile --environment stage --state-values-set imageTag=${IMAGE_VERSION} diff
+    - step:
+        name: 'Deployment to stage'
+        deployment: staging
+        trigger: 'manual'
+        script:
+        - curl -s -L -u "${BITBUCKET_USERNAME}:${BITBUCKET_APP_PASSWORD}" https://api.bitbucket.org/2.0/repositories/tchaikovsky1/helm/downloads/tag.txt --output tag.txt
+        - source tag.txt
+        - echo ${IMAGE_VERSION}
+        - kubectl config set-cluster k8s-stage --server="$STAGE_K8S_CLUSTER" --insecure-skip-tls-verify=true
+        - kubectl config set-credentials bitbucket-admin --token="$STAGE_KUBE_TOKEN"
+        - kubectl config set-context default --cluster=k8s-stage --user=bitbucket-admin
+        - kubectl config use-context default
+        - BUILD_NUMBER=$(tail -c 5 tag.txt)
+        - echo $BUILD_NUMBER
+        - sed -i s/"v308"/"$BUILD_NUMBER"/g helmfile.d/env/stage.yaml
+        - echo "$(<helmfile.d/env/stage.yaml)"
+        - helmfile deps
+        - helmfile -e stage --state-values-set imageTag=${IMAGE_VERSION} diff
+        - helmfile -e stage --state-values-set imageTag=${IMAGE_VERSION} apply

@@ -1,0 +1,3 @@
+host: api-dev.example.com
+imageTag: cr.yandex/crpurmch681deghm39te/api:latest
+apiAmuzeUrl: ""

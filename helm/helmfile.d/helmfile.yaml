@@ -1,0 +1,10 @@
+bases:
+  - ./env/envs.yaml
+---
+helmfiles:
+  - ./helmfile/repos.yaml
+  - ./helmfile/app.yaml.gotmpl
+  - ./helmfile/infra.yaml.gotmpl
+helmDefaults:
+  createNamespace: true
+  historyMax: 10

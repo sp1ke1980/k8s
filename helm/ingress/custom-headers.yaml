@@ -1,0 +1,7 @@
+apiVersion: v1
+data:
+  X-Device-ID: "true"
+kind: ConfigMap
+metadata:
+  name: custom-headers
+  namespace: ingress-nginx

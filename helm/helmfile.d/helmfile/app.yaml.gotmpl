@@ -1,0 +1,26 @@
+---
+environments:
+  default:
+    values:
+      - ../env/default.yaml
+  dev:
+    values:
+      - ../env/dev.yaml
+  stage:
+    values:
+      - ../env/stage.yaml
+---
+releases:
+- name: api-tch
+  namespace: api
+  chart: ../../api-tch
+  version: v0.1.0
+  values:
+    - ../../api-tch/values.yaml
+  set:
+    - name: imageTag
+      value: {{ .Environment.Values.variables.apitch.imageTag }}
+    - name: host
+      value: {{ .Environment.Values.variables.apitch.host }}
+    - name: apiAmuzeUrl
+      value: {{ .Environment.Values.variables.apitch.apiAmuzeUrl }}
